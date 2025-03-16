@@ -63,27 +63,59 @@ Check with command:
 kubectl get pods -n kube-system
 ```
 
-* You should configure RDS DB, Run expense application inside EKS nodes with Target Group Binding, if you are using Application LoadBalancer.
-
-* If you are in USing kubernetes Ingress resource for Load Balancer, You can provide inside ingress reosurce with Listeners, rules, targetType, Ports, scheme, tags, ACM ARN, Group name, etc. 
-* Skip Step Ingress ALP.
-* Add kubernetes Ingress created ALB uRL and Add it into Route53 records (expense-dev.telugudevops.online).
-
-Export Environment Varibles:
-
-```
-export TF_VAR_db_password="<PASSWORD>"
-printenv | grep TF_VAR_<PASSWORD>
-```
-
 ## Target Group Binding:
 * If you are using AWS Application Load Balancer which is creating mannually or provisioing with terraform. You can use Target Group Binding resource.
 * Add the AWS target group arn in yaml file and run
+```
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: alb-tgb
+  namespace: expense
+spec:
+  serviceRef:
+    name: frontend # route traffic to the frontend service
+    port: 8080
+  targetGroupARN: arn:aws:elasticloadbalancing:us-east-1:537124943253:targetgroup/expense-dev-frontend/acda3c710fda1014
+  targetType: ip
+```
 
 ## Ingress (AWS Load balancer Controller)
 * If you are using Ingress resource for Load Balancing, Then Skip ALB provisioning.
 * Provide all the configs to the Ingress resource of kubernetes YAML file for frontend to expose to internet. (Specify Annotations: scheme, tags, targetType, ports, acm arn, group name, host path, service, service port, etc)
 
+
+
+* If you are in using kubernetes Ingress resource created Load Balancer, You can provide inside kubernetes ingress resource with Listeners, rules, targetType, Ports, scheme, tags, ACM ARN, Group name, etc. 
+* Skip Step 07-web-alb configuartion.
+* Add kubernetes Ingress created ALB URL to Route53 records. For example: expense-dev.telugudevops.online.
+* Check applcaition are accessing using AWS LB controller or not.
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: expense-alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:537124943253:certificate/8fcb2e18-8547-458e-ba11-83750dd3280a
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/group.name: expense   #expense namespace
+spec:
+  ingressClassName: alb 
+  rules:
+  - host: "expense.telugudevops.online"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: frontend  #LB selects frontend service, and service will connects to pod and target IP
+            port:
+              number: 8080      #nginx lisetens on 8080
+```
 
 ## EKS Cluster Upgrade
 * Announce downtime and do not let the team to deployment when eks upgradation.
@@ -98,3 +130,13 @@ printenv | grep TF_VAR_<PASSWORD>
 8. Niw check in AWS console, Blue Nodes are deletes and Green Nodes are up and running.
 
 Check our application. It is up and running even at the EKS cluster upgradation.
+
+
+* Note: You should configure RDS DB, Run expense application inside EKS nodes with Target Group Binding, if you are using Application LoadBalancer or Ingress Reource for LB
+
+## Export Environment Varibles:
+
+```
+export TF_VAR_db_password="<PASSWORD>"
+printenv | grep TF_VAR_<PASSWORD>
+```
