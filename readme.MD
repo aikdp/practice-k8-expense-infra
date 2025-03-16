@@ -41,8 +41,8 @@
 ## Create ACM 
 * Create Certificate manger for domain with name is: *.telugudevops.online
 
-## Create Ingress LB (ALB)
-* Create ALB
+## Create Web LB (ALB)
+* Create AWS ALB
 * Create Listeners
 * Create Listener rules
 * Craete Traget Group (check, wether nginx is listens on 8080 or 80 ) with TargetType is "IP" (In VM it it "Instances")
@@ -51,7 +51,7 @@
 * Once all the above infra ready. 
 * aws configure (take bastion host)
 
-## Install AWS Load Balancer Controler to communicate with application inside kubernetes
+## Install AWS Load Balancer Controller to communicate with application inside kubernetes
 * OIDC Provider
 * IAM Policy
 * Service Account
@@ -83,7 +83,6 @@ spec:
 ## Ingress (AWS Load balancer Controller)
 * If you are using Ingress resource for Load Balancing, Then Skip ALB provisioning.
 * Provide all the configs to the Ingress resource of kubernetes YAML file for frontend to expose to internet. (Specify Annotations: scheme, tags, targetType, ports, acm arn, group name, host path, service, service port, etc)
-
 
 
 * If you are in using kubernetes Ingress resource created Load Balancer, You can provide inside kubernetes ingress resource with Listeners, rules, targetType, Ports, scheme, tags, ACM ARN, Group name, etc. 
@@ -132,7 +131,6 @@ spec:
 Check our application. It is up and running even at the EKS cluster upgradation.
 
 
-* Note: You should configure RDS DB, Run expense application inside EKS nodes with Target Group Binding, if you are using Application LoadBalancer or Ingress Reource for LB
 
 ## Export Environment Varibles:
 
@@ -140,3 +138,8 @@ Check our application. It is up and running even at the EKS cluster upgradation.
 export TF_VAR_db_password="<PASSWORD>"
 printenv | grep TF_VAR_<PASSWORD>
 ```
+
+# Note:
+* You should configure RDS DB, Run expense application inside EKS nodes.
+1. You can use Target Group Binding, if you are using Application LoadBalancer or
+2. You can try Kuberetes Ingress Resource as well. (For this we need OIDC Proviude, IAM Policy, SA and Helm repo to install AWS lB COntroller, etc)
